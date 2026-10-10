@@ -1,0 +1,39 @@
+graph TD
+    %% User Access
+    User([User / DevOps Engineer]) -->|HTTP :3000| Grafana
+
+    subgraph "Docker Compose Network (Monitoring Stack)"
+        %% Visualization
+        Grafana[Grafana<br/>Port: 3000] 
+        
+        %% Core Monitoring Engine
+        Grafana -->|Queries via PromQL| Prometheus
+        Prometheus[Prometheus Server<br/>Port: 9090]
+        
+        %% Scraping Data
+        Prometheus -->|Scrapes :9100/metrics| NodeExporter
+        Prometheus -->|Scrapes :8080/metrics| cAdvisor
+        
+        %% Exporters
+        NodeExporter[Node Exporter<br/>Port: 9100]
+        cAdvisor[cAdvisor<br/>Port: 8080]
+        
+        %% Demo Workloads
+        DemoApp1[Demo App 1: Nginx<br/>Port: 80]
+        DemoApp2[Demo App 2: CPU Loader<br/>Background]
+    end
+
+    subgraph "Host Infrastructure"
+        DockerSocket[/var/run/docker.sock<br/>Docker Engine]
+        HostSystem[Host Machine OS<br/>CPU, RAM, Disk]
+    end
+
+    %% Data Flow from Infrastructure to Exporters
+    cAdvisor -.->|Reads Container Stats| DockerSocket
+    NodeExporter -.->|Reads /proc, /sys| HostSystem
+    
+    %% Docker Engine monitoring the containers
+    DockerSocket -.->|Manages & Metrics| DemoApp1
+    DockerSocket -.->|Manages & Metrics| DemoApp2
+    DockerSocket -.->|Manages & Metrics| Prometheus
+    DockerSocket -.->|Manages & Metrics| Grafana

@@ -1,0 +1,47 @@
+# =========================================================
+# Prometheus Global Configuration
+# =========================================================
+global:
+  # How frequently to scrape targets by default.
+  # 15 seconds is a good balance between data resolution and storage overhead for this project.
+  scrape_interval: 15s 
+  
+  # How frequently to evaluate alerting rules.
+  # We want alerts to be evaluated as often as we scrape data.
+  evaluation_interval: 15s 
+
+# =========================================================
+# Scrape Configurations
+# =========================================================
+# This section defines the "jobs" - what Prometheus should monitor.
+# A job is a collection of targets with the same purpose.
+scrape_configs:
+
+  # -------------------------------------------------------
+  # Job 1: Monitor Prometheus Itself
+  # -------------------------------------------------------
+  # Prometheus exposes its own performance metrics at /metrics
+  - job_name: 'prometheus'
+    static_configs:
+      # Since this is Prometheus scraping itself, localhost is appropriate here.
+      - targets: ['localhost:9090']
+
+  # -------------------------------------------------------
+  # Job 2: Monitor the Host OS (Node Exporter)
+  # -------------------------------------------------------
+  # Scrapes CPU, RAM, Disk, and Network stats from the host machine.
+  - job_name: 'node-exporter'
+    static_configs:
+      # Notice we don't use IP addresses. We use the Docker Compose service name 
+      # 'node-exporter'. Docker's internal DNS automatically resolves this to the container's IP.
+      - targets: ['node-exporter:9100']
+
+  # -------------------------------------------------------
+  # Job 3: Monitor the Docker Containers (cAdvisor)
+  # -------------------------------------------------------
+  # Scrapes per-container CPU, memory, network, filesystem, and start-time metrics.
+  - job_name: 'cadvisor'
+    metrics_path: /metrics
+    static_configs:
+      # Similar to node-exporter, we rely on Docker DNS to resolve 'cadvisor'
+      - targets: ['cadvisor:8080']
